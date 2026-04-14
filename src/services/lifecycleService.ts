@@ -1,14 +1,14 @@
-import { prisma } from '../lib/prisma';
+﻿import { prisma } from '../lib/prisma';
 import { logEvent, triggerAlert } from './eventService';
 import { broadcastToHQ, broadcastToCampus } from '../lib/websocket';
 import { sendEmail, riskAlertTemplate, weeklyDigestTemplate } from '../lib/email';
 import { lifecycleLogger } from '../lib/logger';
 
-// ─── Lifecycle Stage Thresholds ───────────────
-// PLANNING → LAUNCHING: campus created with leader assigned
-// LAUNCHING → ACTIVE: 3+ active members, 2+ meetings held
-// ACTIVE → SUSTAINABLE: sustainabilityScore >= 70, 10+ members, 30+ days attendance
-// SUSTAINABLE → MULTIPLYING: sustainabilityScore >= 85, 20+ members, ambassador role filled
+// â”€â”€â”€ Lifecycle Stage Thresholds â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// PLANNING â†’ LAUNCHING: campus created with leader assigned
+// LAUNCHING â†’ ACTIVE: 3+ active members, 2+ meetings held
+// ACTIVE â†’ SUSTAINABLE: sustainabilityScore >= 70, 10+ members, 30+ days attendance
+// SUSTAINABLE â†’ MULTIPLYING: sustainabilityScore >= 85, 20+ members, ambassador role filled
 
 export const LIFECYCLE_THRESHOLDS = {
   LAUNCHING: { minMembers: 3, minMeetingsHeld: 2 },
@@ -17,7 +17,7 @@ export const LIFECYCLE_THRESHOLDS = {
   MULTIPLYING: { minMembers: 30, minSustainabilityScore: 90 },
 };
 
-// ─── Feature unlock matrix ────────────────────
+// â”€â”€â”€ Feature unlock matrix â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const LIFECYCLE_UNLOCKS: Record<string, string[]> = {
   PLANNING:     [],
   LAUNCHING:    ['meetings', 'check_in'],
@@ -30,7 +30,7 @@ export function isCampusFeatureUnlocked(lifecycleStage: string, feature: string)
   return LIFECYCLE_UNLOCKS[lifecycleStage]?.includes(feature) ?? false;
 }
 
-// ─── Check and apply lifecycle transitions ────
+// â”€â”€â”€ Check and apply lifecycle transitions â”€â”€â”€â”€
 export async function evaluateCampusLifecycle(campusId: string): Promise<{
   previous: string;
   current: string;
@@ -41,7 +41,7 @@ export async function evaluateCampusLifecycle(campusId: string): Promise<{
     where: { id: campusId },
     include: {
       _count: { select: { users: true, meetings: true } },
-      sustainabilityIndex: { orderBy: { calculatedAt: 'desc' }, take: 1 },
+      sustainabilityIndex: { take: 1 },
       users: { where: { role: 'AMBASSADOR' }, take: 1 },
     },
   });
@@ -70,7 +70,7 @@ export async function evaluateCampusLifecycle(campusId: string): Promise<{
       nextStage = 'ACTIVE';
     } else {
       if (memberCount < LIFECYCLE_THRESHOLDS.ACTIVE.minMembers) blockers.push(`Need ${LIFECYCLE_THRESHOLDS.ACTIVE.minMembers} members (have ${memberCount})`);
-      if (sustainScore < LIFECYCLE_THRESHOLDS.ACTIVE.minSustainabilityScore) blockers.push(`Need sustainability score ≥ ${LIFECYCLE_THRESHOLDS.ACTIVE.minSustainabilityScore} (have ${sustainScore.toFixed(0)})`);
+      if (sustainScore < LIFECYCLE_THRESHOLDS.ACTIVE.minSustainabilityScore) blockers.push(`Need sustainability score â‰¥ ${LIFECYCLE_THRESHOLDS.ACTIVE.minSustainabilityScore} (have ${sustainScore.toFixed(0)})`);
       if (attendance30d < LIFECYCLE_THRESHOLDS.ACTIVE.minAttendance30d) blockers.push(`Need ${LIFECYCLE_THRESHOLDS.ACTIVE.minAttendance30d} attendance records in 30 days (have ${attendance30d})`);
     }
   } else if (previousStage === 'ACTIVE') {
@@ -79,7 +79,7 @@ export async function evaluateCampusLifecycle(campusId: string): Promise<{
       nextStage = 'SUSTAINABLE';
     } else {
       if (memberCount < LIFECYCLE_THRESHOLDS.SUSTAINABLE.minMembers) blockers.push(`Need ${LIFECYCLE_THRESHOLDS.SUSTAINABLE.minMembers} members (have ${memberCount})`);
-      if (sustainScore < LIFECYCLE_THRESHOLDS.SUSTAINABLE.minSustainabilityScore) blockers.push(`Need sustainability score ≥ ${LIFECYCLE_THRESHOLDS.SUSTAINABLE.minSustainabilityScore} (have ${sustainScore.toFixed(0)})`);
+      if (sustainScore < LIFECYCLE_THRESHOLDS.SUSTAINABLE.minSustainabilityScore) blockers.push(`Need sustainability score â‰¥ ${LIFECYCLE_THRESHOLDS.SUSTAINABLE.minSustainabilityScore} (have ${sustainScore.toFixed(0)})`);
       if (!hasAmbassador) blockers.push('Need an Ambassador role filled');
     }
   } else if (previousStage === 'SUSTAINABLE') {
@@ -87,7 +87,7 @@ export async function evaluateCampusLifecycle(campusId: string): Promise<{
       nextStage = 'MULTIPLYING';
     } else {
       if (memberCount < LIFECYCLE_THRESHOLDS.MULTIPLYING.minMembers) blockers.push(`Need ${LIFECYCLE_THRESHOLDS.MULTIPLYING.minMembers} members (have ${memberCount})`);
-      if (sustainScore < LIFECYCLE_THRESHOLDS.MULTIPLYING.minSustainabilityScore) blockers.push(`Need sustainability score ≥ ${LIFECYCLE_THRESHOLDS.MULTIPLYING.minSustainabilityScore} (have ${sustainScore.toFixed(0)})`);
+      if (sustainScore < LIFECYCLE_THRESHOLDS.MULTIPLYING.minSustainabilityScore) blockers.push(`Need sustainability score â‰¥ ${LIFECYCLE_THRESHOLDS.MULTIPLYING.minSustainabilityScore} (have ${sustainScore.toFixed(0)})`);
     }
   }
 
@@ -113,7 +113,7 @@ export async function evaluateCampusLifecycle(campusId: string): Promise<{
   return { previous: previousStage, current: nextStage, transitioned, blockers };
 }
 
-// ─── Risk alert dispatch ──────────────────────
+// â”€â”€â”€ Risk alert dispatch â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function dispatchRiskAlerts(campusId: string): Promise<number> {
   const highRiskUsers = await prisma.scoringHistory.findMany({
     where: {
@@ -140,7 +140,7 @@ export async function dispatchRiskAlerts(campusId: string): Promise<number> {
       const signals = (riskEntry.signals as string[]) || ['Low attendance', 'Missed check-ins'];
       await sendEmail({
         to: leader.email,
-        subject: `⚠️ Risk Alert: ${riskEntry.user.name}`,
+        subject: `âš ï¸ Risk Alert: ${riskEntry.user.name}`,
         html: riskAlertTemplate(leader.name, riskEntry.user.name, riskEntry.relapseRiskLevel, signals),
       });
       dispatched++;
@@ -150,7 +150,7 @@ export async function dispatchRiskAlerts(campusId: string): Promise<number> {
   return dispatched;
 }
 
-// ─── Weekly digest to campus leaders ─────────
+// â”€â”€â”€ Weekly digest to campus leaders â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function sendWeeklyDigests(): Promise<void> {
   const campuses = await prisma.campus.findMany({
     where: { lifecycleStage: { in: ['ACTIVE', 'SUSTAINABLE', 'MULTIPLYING'] } },
@@ -177,9 +177,10 @@ export async function sendWeeklyDigests(): Promise<void> {
     for (const leader of campus.users) {
       await sendEmail({
         to: leader.email,
-        subject: `📊 Weekly Digest — ${campus.name}`,
+        subject: `ðŸ“Š Weekly Digest â€” ${campus.name}`,
         html: weeklyDigestTemplate(leader.name, campus.name, stats),
       });
     }
   }
 }
+
