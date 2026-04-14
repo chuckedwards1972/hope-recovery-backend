@@ -32,6 +32,11 @@ import scoringRoutes from './routes/scoring';
 import announcementRoutes from './routes/announcements';
 import aiRoutes from './routes/ai';
 import expansionRoutes from './routes/expansion';
+import notificationRoutes from './routes/notifications';
+import taskRoutes from './routes/tasks';
+import grantRoutes from './routes/grants';
+import pipelineRoutes from './routes/pipeline';
+import missionRoutes from './routes/missions';
 
 // â”€â”€â”€ Initialize Sentry before anything else â”€â”€
 initSentry();
@@ -141,7 +146,13 @@ app.use('/api/media',       uploadLimiter,    mediaRoutes);
 app.use('/api/scoring',                       scoringRoutes);
 app.use('/api/announcements',                 announcementRoutes);
 app.use('/api/ai',                            aiRoutes);
-app.use('/api/expansion',                     expansionRoutes);
+app.use('/api/expansion', expansionRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/tasks', taskRoutes);
+app.use('/api/grants', grantRoutes);
+app.use('/api/pipeline', pipelineRoutes);
+app.use('/api/missions', missionRoutes);
+app.get('/api/dashboard', (req, res) => res.json({ members:{active:0,total:0}, housing:{total_capacity:0,occupied:0}, financial:{month_donations:0} }));
 
 // â”€â”€â”€ Sentry error handler (before errorHandler) â”€
 app.use(Sentry.Handlers.errorHandler());
@@ -198,5 +209,6 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason) => {
   logger.error({ reason }, 'Unhandled promise rejection');
 });
+
 
 
