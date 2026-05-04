@@ -1,0 +1,6 @@
+[phase.build]
+cmd = "npm install"
+[phase.setup]
+nixPkgs = ["nodejs"]
+[start]
+cmd = "node server.js"
