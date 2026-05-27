@@ -1,4 +1,4 @@
-﻿import 'dotenv/config';
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -38,34 +38,34 @@ import grantRoutes from './routes/grants';
 import pipelineRoutes from './routes/pipeline';
 import missionRoutes from './routes/missions';
 
-// â”€â”€â”€ Initialize Sentry before anything else â”€â”€
+// ─── Initialize Sentry before anything else ──
 initSentry();
 
 const app = express(); app.set("trust proxy", 1);
 const httpServer = createServer(app);
 
-// â”€â”€â”€ Sentry request handler (must be first) â”€â”€
+// ─── Sentry request handler (must be first) ──
 app.use(Sentry.Handlers.requestHandler());
 app.use(Sentry.Handlers.tracingHandler());
 
-// â”€â”€â”€ Security â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Security ────────────────────────────────
 app.use(helmet({
   crossOriginEmbedderPolicy: false,
   contentSecurityPolicy: process.env.NODE_ENV === 'production',
 }));
 
 app.use(cors({
-  origin: ['https://hope-recovery-network.vercel.app', 'http://localhost:5173', process.env.CORS_ORIGIN].filter(Boolean),
+  origin: ['http://localhost:8080', 'http://localhost:3000', 'http://127.0.0.1:8080','https://hope-recovery-network.vercel.app', 'http://localhost:5173', process.env.CORS_ORIGIN].filter(Boolean),
   credentials: true,
 }));
 
-// â”€â”€â”€ Correlation ID â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Correlation ID ───────────────────────────
 app.use((req, _res, next) => {
   (req as any).correlationId = req.headers['x-correlation-id'] || uuid();
   next();
 });
 
-// â”€â”€â”€ Structured request logging (Pino) â”€â”€â”€â”€â”€â”€â”€
+// ─── Structured request logging (Pino) ───────
 app.use((req, res, next) => {
   const start = Date.now();
   res.on('finish', () => {
@@ -82,7 +82,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// â”€â”€â”€ Rate limiting â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Rate limiting ────────────────────────────
 app.use(rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 200,
@@ -109,11 +109,11 @@ const uploadLimiter = rateLimit({
   message: { error: 'Too many upload requests.' },
 });
 
-// â”€â”€â”€ Body parsing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Body parsing ─────────────────────────────
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// â”€â”€â”€ Health check â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Health check ─────────────────────────────
 app.get('/health', async (_req, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
@@ -128,7 +128,7 @@ app.get('/health', async (_req, res) => {
   }
 });
 
-// â”€â”€â”€ API Routes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── API Routes ───────────────────────────────
 app.use('/api/auth',         authLimiter,     authRoutes);
 app.use('/api/users',                         userRoutes);
 app.use('/api/campuses',                      campusRoutes);
@@ -154,16 +154,16 @@ app.use('/api/pipeline', pipelineRoutes);
 app.use('/api/missions', missionRoutes);
 app.get('/api/dashboard', (req, res) => res.json({ members:{active:0,total:0}, housing:{total_capacity:0,occupied:0}, financial:{month_donations:0} }));
 
-// â”€â”€â”€ Sentry error handler (before errorHandler) â”€
+// ─── Sentry error handler (before errorHandler) ─
 app.use(Sentry.Handlers.errorHandler());
 
-// â”€â”€â”€ Global error handler â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Global error handler ─────────────────────
 app.use(errorHandler);
 
-// â”€â”€â”€ WebSocket â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── WebSocket ────────────────────────────────
 initWebSocket(httpServer);
 
-// â”€â”€â”€ Start â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Start ────────────────────────────────────
 const PORT = parseInt(process.env.PORT || '4000');
 
 async function main() {
@@ -191,9 +191,9 @@ async function main() {
 
 main();
 
-// â”€â”€â”€ Graceful shutdown â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Graceful shutdown ────────────────────────
 process.on('SIGTERM', async () => {
-  logger.info('SIGTERM received â€” shutting down gracefully');
+  logger.info('SIGTERM received — shutting down gracefully');
   await prisma.$disconnect();
   httpServer.close(() => {
     logger.info('Server closed');
