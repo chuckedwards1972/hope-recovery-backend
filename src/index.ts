@@ -55,7 +55,7 @@ app.use(helmet({
 }));
 
 app.use(cors({
-  origin: ['http://localhost:8080', 'http://localhost:3000', 'http://127.0.0.1:8080','https://hope-recovery-network.vercel.app', 'http://localhost:5173', process.env.CORS_ORIGIN].filter(Boolean),
+  origin: '*',
   credentials: true,
 }));
 
@@ -209,6 +209,7 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason) => {
   logger.error({ reason }, 'Unhandled promise rejection');
 });
+
 
 
 
