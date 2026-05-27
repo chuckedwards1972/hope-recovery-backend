@@ -2,7 +2,7 @@
   "name": "polr-backend",
   "version": "1.0.0",
   "description": "POLR Restoration Network \u2014 Backend API",
-  "main": "dist/index.js",
+  "main": "dist/i"start": "npm run build && node dist/index.js""start": "npm run build && node dist/index.js"s",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "build": "tsc",
