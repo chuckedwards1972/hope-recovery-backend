@@ -56,7 +56,7 @@ app.use(helmet({
 
 app.use(cors({
   origin: '*',
-  credentials: true,
+  
 }));
 
 // ─── Correlation ID ───────────────────────────
@@ -209,6 +209,7 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason) => {
   logger.error({ reason }, 'Unhandled promise rejection');
 });
+
 
 
 
