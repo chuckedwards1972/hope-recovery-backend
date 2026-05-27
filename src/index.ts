@@ -50,7 +50,7 @@ app.use(Sentry.Handlers.tracingHandler());
 
 // ─── Security ────────────────────────────────
 app.use(helmet({
-  crossOriginEmbedderPolicy: false,
+  crossOriginEmbedderPolicy: false // cors-fix-trigger,
   contentSecurityPolicy: process.env.NODE_ENV === 'production',
 }));
 
