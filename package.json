@@ -2,10 +2,10 @@
   "name": "polr-backend",
   "version": "1.0.0",
   "description": "POLR Restoration Network \u2014 Backend API",
-  "main": "dist/i"start": "npm run build && node dist/index.js""start": "npm run build && node dist/index.js"s",
+  "main": "dist/i"start": "npx ts-node src/index.ts""start": "npx ts-node src/index.ts"s",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
-    "build": "tsc",
+    "build": "tsc","postinstall": "tsc",
     "start": "node dist/index.js",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
@@ -50,3 +50,4 @@
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
   }
 }
+
