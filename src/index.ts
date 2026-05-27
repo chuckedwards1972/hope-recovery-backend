@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import express from 'express';
+import express from 'express';app.use(cors({app.use(cors({
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
