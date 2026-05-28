@@ -1,4 +1,4 @@
-import 'dotenv/config';
+﻿import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -131,3 +131,4 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason) => {
   logger.error({ reason }, 'Unhandled rejection');
 });
+
