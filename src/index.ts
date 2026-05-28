@@ -1,4 +1,4 @@
-﻿import 'dotenv/config';
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -211,8 +211,5 @@ process.on('unhandledRejection', (reason) => {
 
 
 
-#   c a c h e   b u s t   0 5 / 2 7 / 2 0 2 6   1 9 : 0 6 : 0 9  
+
  
-
-
-
