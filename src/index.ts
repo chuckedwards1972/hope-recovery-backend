@@ -50,7 +50,7 @@ app.use(Sentry.Handlers.tracingHandler());
 
 // â”€â”€â”€ Security â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.use(helmet({
-  crossOriginEmbedderPolicy: false // cors-fix-trigger,
+  crossOriginEmbedderPolicy: false,
   contentSecurityPolicy: process.env.NODE_ENV === 'production',
 }));
 
@@ -213,5 +213,6 @@ process.on('unhandledRejection', (reason) => {
 
 #   c a c h e   b u s t   0 5 / 2 7 / 2 0 2 6   1 9 : 0 6 : 0 9  
  
+
 
 
