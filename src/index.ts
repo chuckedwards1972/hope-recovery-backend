@@ -34,18 +34,36 @@ import taskRoutes from './routes/tasks';
 import grantRoutes from './routes/grants';
 import pipelineRoutes from './routes/pipeline';
 import missionRoutes from './routes/missions';
+
 initSentry();
+
 const app = express();
 app.set('trust proxy', 1);
 const httpServer = createServer(app);
+
 app.use(Sentry.Handlers.requestHandler());
 app.use(Sentry.Handlers.tracingHandler());
 app.use(cors({ origin: '*' }));
 app.use(helmet({ crossOriginEmbedderPolicy: false, contentSecurityPolicy: false }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
-app.use(rateLimit({ windowMs: 15*60*1000, max: 200, standardHeaders: true, legacyHeaders: false, skip: (req) => req.path === '/health' }));
-app.get('/health', async (_req, res) => { try { await prisma.$queryRawSELECT 1`; res.json({ status: 'ok' }); } catch { res.status(503).json({ status: 'degraded' }); } });
+app.use(rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => req.path === '/health',
+}));
+
+app.get('/health', async (_req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  } catch {
+    res.status(503).json({ status: 'degraded' });
+  }
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/campuses', campusRoutes);
@@ -69,10 +87,47 @@ app.use('/api/tasks', taskRoutes);
 app.use('/api/grants', grantRoutes);
 app.use('/api/pipeline', pipelineRoutes);
 app.use('/api/missions', missionRoutes);
+app.get('/api/dashboard', (_req, res) => res.json({ members: { active: 0, total: 0 }, housing: { total_capacity: 0, occupied: 0 }, financial: { month_donations: 0 } }));
+
 app.use(Sentry.Handlers.errorHandler());
 app.use(errorHandler);
+
 initWebSocket(httpServer);
+
 const PORT = parseInt(process.env.PORT || '4000');
-async function main() { try { await prisma.$connect(); logger.info('Database connected'); httpServer.listen(PORT, () => { logger.info({ port: PORT }, 'POLR API v5 started'); }); if (process.env.NODE_ENV === 'production') { startScoringCron(); startSustainabilityCron(); startDigestCron(); startLifecycleCron(); logger.info('Background cron jobs started'); } } catch (err) { logger.error({ err }, 'Failed to start server'); process.exit(1); } }
+
+async function main() {
+  try {
+    await prisma.$connect();
+    logger.info('Database connected');
+    httpServer.listen(PORT, () => {
+      logger.info({ port: PORT }, 'POLR API v5 started');
+    });
+    if (process.env.NODE_ENV === 'production' || process.env.ENABLE_CRONS === 'true') {
+      startScoringCron();
+      startSustainabilityCron();
+      startDigestCron();
+      startLifecycleCron();
+      logger.info('Background cron jobs started');
+    }
+  } catch (err) {
+    logger.error({ err }, 'Failed to start server');
+    process.exit(1);
+  }
+}
+
 main();
-process.on('SIGTERM', async () => { await prisma.$disconnect(); httpServer.close(() => process.exit(0)); });
+
+process.on('SIGTERM', async () => {
+  await prisma.$disconnect();
+  httpServer.close(() => process.exit(0));
+});
+
+process.on('uncaughtException', (err) => {
+  logger.error({ err }, 'Uncaught exception');
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason) => {
+  logger.error({ reason }, 'Unhandled rejection');
+});
