@@ -1,4 +1,5 @@
-﻿FROM node:20-alpine
+ARG CACHE_BUST=20260527225507
+FROM node:20-alpine
 RUN apk add --no-cache openssl
 WORKDIR /app
 COPY package*.json ./
