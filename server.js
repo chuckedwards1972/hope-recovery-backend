@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const express     = require('express');
 const { Pool }    = require('pg');
@@ -8,7 +8,7 @@ const cors        = require('cors');
 const helmet      = require('helmet');
 const rateLimit   = require('express-rate-limit');
 
-// ── ENV ───────────────────────────────────────────────────────
+// â”€â”€ ENV â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const PORT        = process.env.PORT || 3000;
 const DATABASE_URL = process.env.DATABASE_URL;
 const JWT_SECRET  = process.env.JWT_SECRET || 'rrn-dev-secret-change-in-production';
@@ -20,6 +20,10 @@ const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '').split(',').filter(Bo
   'http://localhost:3000',
   'http://localhost:5500',
   'http://127.0.0.1:5500',
+  'http://localhost:8080',
+  'null',
+  null,
+  'http://127.0.0.1:8080',
 ]);
 
 if (!DATABASE_URL) {
@@ -27,7 +31,7 @@ if (!DATABASE_URL) {
   process.exit(1);
 }
 
-// ── DATABASE ──────────────────────────────────────────────────
+// â”€â”€ DATABASE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const pool = new Pool({
   connectionString: DATABASE_URL,
   ssl: { rejectUnauthorized: false },
@@ -48,7 +52,7 @@ async function query(text, params) {
   }
 }
 
-// ── APP SETUP ─────────────────────────────────────────────────
+// â”€â”€ APP SETUP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const app = express();
 
 app.set('trust proxy', 1);
@@ -65,7 +69,7 @@ app.use(cors({
     if (ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
     // Allow any *.railway.app subdomain for internal calls
     if (origin.endsWith('.railway.app')) return cb(null, true);
-    return cb(null, false); // Reject — don't throw, just deny
+    return cb(null, false); // Reject â€” don't throw, just deny
   },
   credentials: true,
   methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
@@ -75,7 +79,7 @@ app.use(cors({
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// ── RATE LIMITING ─────────────────────────────────────────────
+// â”€â”€ RATE LIMITING â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,  // 15 min
   max: 20,
@@ -93,18 +97,18 @@ const apiLimiter = rateLimit({
 
 app.use('/api', apiLimiter);
 
-// ── HELPERS ───────────────────────────────────────────────────
+// â”€â”€ HELPERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function signToken(user) {
   return jwt.sign(
     {
       sub:      user.id,
-      username: user.username,
+      username: user.username || user.email,
       email:    user.email,
       name:     user.name,
-      role:     user.role,
-      level:    user.level,
+      role:     user.role || 'member',
+      level:    user.level !== undefined ? user.level : 5,
       campus:   user.campus_id,
-      title:    user.title,
+      title:    user.title || 'Member',
     },
     JWT_SECRET,
     { expiresIn: JWT_EXPIRES }
@@ -143,7 +147,7 @@ function audit(userId, action, entityType, entityId, details, ip) {
   ).catch(err => console.error('[AUDIT]', err.message));
 }
 
-// ── HEALTH ────────────────────────────────────────────────────
+// â”€â”€ HEALTH â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.get('/api/health', async (req, res) => {
   try {
     await query('SELECT 1');
@@ -153,8 +157,8 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-// ── AUTH ──────────────────────────────────────────────────────
-// POST /api/auth  — login
+// â”€â”€ AUTH â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// POST /api/auth  â€” login
 app.post('/api/auth', authLimiter, async (req, res) => {
   try {
     const { email, username, password } = req.body;
@@ -166,7 +170,7 @@ app.post('/api/auth', authLimiter, async (req, res) => {
     const r = await query(
       `SELECT * FROM users
        WHERE (LOWER(email) = LOWER($1) OR LOWER(username) = LOWER($1))
-         AND status != 'Suspended'
+         AND "isActive" = true
        LIMIT 1`,
       [identifier]
     );
@@ -174,7 +178,7 @@ app.post('/api/auth', authLimiter, async (req, res) => {
     const user = r.rows[0];
     if (!user) return res.status(401).json({ error: 'Invalid credentials' });
 
-    const valid = await bcrypt.compare(password, user.password_hash);
+    const valid = await bcrypt.compare(password, user.password || user.password_hash || '');
     if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
 
     const token = signToken(user);
@@ -199,7 +203,7 @@ app.post('/api/auth', authLimiter, async (req, res) => {
   }
 });
 
-// POST /api/auth/register — self-register as member
+// POST /api/auth/register â€” self-register as member
 app.post('/api/auth/register', authLimiter, async (req, res) => {
   try {
     const { name, email, password, campus_id } = req.body;
@@ -215,7 +219,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
 
     const hash = await bcrypt.hash(password, 12);
     const r = await query(
-      `INSERT INTO users (username, email, password_hash, name, role, level, campus_id, status)
+      `INSERT INTO users (username, email, password, name, role, level, campus_id, status)
        VALUES ($1,$2,$3,$4,'member',5,$5,'Intake')
        RETURNING id, username, email, name, role, level, campus_id, title`,
       [email, email, hash, name, campus_id || null]
@@ -235,7 +239,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
   }
 });
 
-// GET /api/auth/me — validate token, return current user
+// GET /api/auth/me â€” validate token, return current user
 app.get('/api/auth/me', requireAuth, async (req, res) => {
   try {
     const r = await query(
@@ -255,12 +259,12 @@ app.post('/api/auth/logout', requireAuth, (req, res) => {
   res.json({ ok: true });
 });
 
-// ── MEMBERS ───────────────────────────────────────────────────
-// GET /api/members — list members (staff+)
+// â”€â”€ MEMBERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// GET /api/members â€” list members (staff+)
 app.get('/api/members', requireAuth, requireLevel(4), async (req, res) => {
   try {
     const { campus_id, status, search, limit = 100, offset = 0 } = req.query;
-    let where = ['u.role IN (\'member\',\'staff\',\'leader\',\'director\')'];
+    let where = ['u.id IS NOT NULL'];
     const params = [];
     let pi = 1;
 
@@ -283,12 +287,10 @@ app.get('/api/members', requireAuth, requireLevel(4), async (req, res) => {
     const sql = `
       SELECT u.id, u.username, u.email, u.name, u.role, u.level, u.status,
              u.phone, u.title, u.join_date, u.sobriety_date, u.pipeline_stage,
-             u.steps_completed, u.attendance_count, u.notes,
-             c.name AS campus_name, u.campus_id,
-             COALESCE(ps.lessons_completed, 0) AS lessons_completed
+             u.steps_completed, u.attendance_count, u.notes, u.campus_id,
+             u.campus_id AS campus_name,
+             0 AS lessons_completed
       FROM users u
-      LEFT JOIN campuses c ON c.id = u.campus_id
-      LEFT JOIN member_progress_summary ps ON ps.user_id = u.id
       WHERE ${where.join(' AND ')}
       ORDER BY u.name ASC
       LIMIT $${pi++} OFFSET $${pi++}`;
@@ -302,7 +304,7 @@ app.get('/api/members', requireAuth, requireLevel(4), async (req, res) => {
   }
 });
 
-// POST /api/members — create member
+// POST /api/members â€” create member
 app.post('/api/members', requireAuth, requireLevel(3), async (req, res) => {
   try {
     const { name, email, campus_id, role='member', level=5, phone, sobriety_date, notes } = req.body;
@@ -312,7 +314,7 @@ app.post('/api/members', requireAuth, requireLevel(3), async (req, res) => {
     const hash = await bcrypt.hash(password, 12);
 
     const r = await query(
-      `INSERT INTO users (username,email,password_hash,name,role,level,campus_id,phone,sobriety_date,notes)
+      `INSERT INTO users (username,email,password,name,role,level,campus_id,phone,sobriety_date,notes)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
        RETURNING id,username,email,name,role,level,campus_id,status`,
       [email, email, hash, name, role, level, campus_id||null, phone||null, sobriety_date||null, notes||null]
@@ -378,15 +380,14 @@ app.patch('/api/members/:id', requireAuth, requireLevel(3), async (req, res) => 
   }
 });
 
-// ── CAMPUSES ──────────────────────────────────────────────────
+// â”€â”€ CAMPUSES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.get('/api/admin/campuses', requireAuth, requireLevel(2), async (req, res) => {
   try {
+    // campuses table may not exist - return from users campus_id
     const r = await query(
-      `SELECT c.*, COUNT(u.id) AS member_count
-       FROM campuses c LEFT JOIN users u ON u.campus_id = c.id AND u.role='member'
-       GROUP BY c.id ORDER BY c.name`,
+      `SELECT DISTINCT campus_id AS id, campus_id AS name FROM users WHERE campus_id IS NOT NULL ORDER BY campus_id`,
       []
-    );
+    ).catch(() => ({ rows: [] }));
     res.json(r.rows);
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
@@ -416,8 +417,8 @@ app.delete('/api/admin/campuses/:id', requireAuth, requireLevel(1), async (req, 
   }
 });
 
-// ── LMS — LESSONS ─────────────────────────────────────────────
-// GET /api/lms/lessons — all lessons (for course browser)
+// â”€â”€ LMS â€” LESSONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// GET /api/lms/lessons â€” all lessons (for course browser)
 app.get('/api/lms/lessons', requireAuth, async (req, res) => {
   try {
     const { course_id, step_num, tier } = req.query;
@@ -456,7 +457,7 @@ app.get('/api/lms/lessons', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/lms/lessons/:id — single lesson with full body + quiz
+// GET /api/lms/lessons/:id â€” single lesson with full body + quiz
 app.get('/api/lms/lessons/:id', requireAuth, async (req, res) => {
   try {
     const r = await query(
@@ -503,8 +504,8 @@ app.get('/api/lms/lessons/:id', requireAuth, async (req, res) => {
   }
 });
 
-// ── LMS — PROGRESS ────────────────────────────────────────────
-// GET /api/lms/progress — all progress for current user
+// â”€â”€ LMS â€” PROGRESS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// GET /api/lms/progress â€” all progress for current user
 app.get('/api/lms/progress', requireAuth, async (req, res) => {
   try {
     const r = await query(
@@ -533,7 +534,7 @@ app.get('/api/lms/progress', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/lms/progress — upsert progress record
+// POST /api/lms/progress â€” upsert progress record
 app.post('/api/lms/progress', requireAuth, async (req, res) => {
   try {
     const { lessonId, progress } = req.body;
@@ -570,8 +571,8 @@ app.post('/api/lms/progress', requireAuth, async (req, res) => {
   }
 });
 
-// ── LMS — COMPLETE ────────────────────────────────────────────
-// POST /api/lms/complete — mark lesson complete
+// â”€â”€ LMS â€” COMPLETE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// POST /api/lms/complete â€” mark lesson complete
 app.post('/api/lms/complete', requireAuth, async (req, res) => {
   try {
     const { lessonId, courseId, stepNum, lessonNum, quizPassed, quizScore } = req.body;
@@ -612,8 +613,8 @@ app.post('/api/lms/complete', requireAuth, async (req, res) => {
   }
 });
 
-// ── LMS — STEP EXAM ───────────────────────────────────────────
-// POST /api/lms/exam — submit step exam
+// â”€â”€ LMS â€” STEP EXAM â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// POST /api/lms/exam â€” submit step exam
 app.post('/api/lms/exam', requireAuth, async (req, res) => {
   try {
     const { stepNum, answers } = req.body;
@@ -667,7 +668,7 @@ app.post('/api/lms/exam', requireAuth, async (req, res) => {
   }
 });
 
-// ── LMS — MENTOR SIGN-OFF ─────────────────────────────────────
+// â”€â”€ LMS â€” MENTOR SIGN-OFF â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // POST /api/lms/mentor-signoff
 app.post('/api/lms/mentor-signoff', requireAuth, async (req, res) => {
   try {
@@ -699,7 +700,7 @@ app.post('/api/lms/mentor-signoff', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/lms/progress/:userId — admin view of member progress
+// GET /api/lms/progress/:userId â€” admin view of member progress
 app.get('/api/lms/progress/:userId', requireAuth, requireLevel(3), async (req, res) => {
   try {
     const r = await query(
@@ -718,8 +719,8 @@ app.get('/api/lms/progress/:userId', requireAuth, requireLevel(3), async (req, r
   }
 });
 
-// ── LMS — SEED CURRICULUM ─────────────────────────────────────
-// POST /api/lms/seed — L0 only, seeds the 52-lesson curriculum
+// â”€â”€ LMS â€” SEED CURRICULUM â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// POST /api/lms/seed â€” L0 only, seeds the 52-lesson curriculum
 app.post('/api/lms/seed', requireAuth, requireLevel(0), async (req, res) => {
   try {
     const { courses, lessons } = req.body;
@@ -775,8 +776,8 @@ app.post('/api/lms/seed', requireAuth, requireLevel(0), async (req, res) => {
   }
 });
 
-// ── SYNC ──────────────────────────────────────────────────────
-// GET /api/sync/pull — pull server state since timestamp
+// â”€â”€ SYNC â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// GET /api/sync/pull â€” pull server state since timestamp
 app.get('/api/sync/pull', requireAuth, async (req, res) => {
   try {
     const since = parseInt(req.query.since || 0);
@@ -814,7 +815,7 @@ app.get('/api/sync/pull', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/sync/push — push client events
+// POST /api/sync/push â€” push client events
 app.post('/api/sync/push', requireAuth, async (req, res) => {
   try {
     const { type, payload, clientId } = req.body;
@@ -832,7 +833,7 @@ app.post('/api/sync/push', requireAuth, async (req, res) => {
   }
 });
 
-// ── PROVISION ─────────────────────────────────────────────────
+// â”€â”€ PROVISION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // POST /api/provision/validate
 app.post('/api/provision/validate', async (req, res) => {
   try {
@@ -869,25 +870,23 @@ app.get('/api/provision/org/:org', async (req, res) => {
   });
 });
 
-// ── MEETINGS ──────────────────────────────────────────────────
+// â”€â”€ MEETINGS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.get('/api/meetings', requireAuth, async (req, res) => {
   try {
     const { campus_id } = req.query;
-    const params = campus_id ? [campus_id] : [];
-    const r = await query(
-      `SELECT m.*, c.name AS campus_name FROM meetings m
-       LEFT JOIN campuses c ON c.id = m.campus_id
-       WHERE m.active=true ${campus_id ? 'AND m.campus_id=$1' : ''}
-       ORDER BY c.name, m.day_of_week`,
-      params
-    );
+    let r;
+    if (campus_id) {
+      r = await query('SELECT * FROM meetings WHERE campus_id=$1 ORDER BY id', [campus_id]);
+    } else {
+      r = await query('SELECT * FROM meetings ORDER BY id', []);
+    }
     res.json(r.rows);
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
   }
 });
 
-// ── JOURNAL ───────────────────────────────────────────────────
+// â”€â”€ JOURNAL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.get('/api/journal', requireAuth, async (req, res) => {
   try {
     const r = await query(
@@ -914,18 +913,246 @@ app.post('/api/journal', requireAuth, async (req, res) => {
   }
 });
 
-// ── ERROR HANDLER ─────────────────────────────────────────────
+// â”€â”€ ERROR HANDLER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+// DONATIONS
+app.get('/api/donations', requireAuth, async (req, res) => {
+  try {
+    const r = await query('SELECT * FROM donations ORDER BY "createdAt" DESC', []);
+    res.json({ success: true, data: r.rows, count: r.rows.length });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+app.post('/api/donations', requireAuth, async (req, res) => {
+  try {
+    const { amount, donor, campus_id, type, notes } = req.body;
+    const r = await query(
+      'INSERT INTO donations (id,amount,donor,campus_id,type,notes,"createdAt","updatedAt") VALUES (gen_random_uuid(),$1,$2,$3,$4,$5,NOW(),NOW()) RETURNING *',
+      [amount||0, donor||'Anonymous', campus_id||null, type||'general', notes||null]
+    );
+    res.status(201).json({ success: true, data: r.rows[0] });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// HOUSING
+app.get('/api/housing', requireAuth, async (req, res) => {
+  try {
+    const r = await query('SELECT * FROM housing ORDER BY "createdAt" DESC', []);
+    res.json({ success: true, data: r.rows, count: r.rows.length });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+app.post('/api/housing', requireAuth, async (req, res) => {
+  try {
+    const r = await query(
+      'INSERT INTO housing (id,"createdAt","updatedAt") VALUES (gen_random_uuid(),NOW(),NOW()) RETURNING *',
+      []
+    );
+    res.status(201).json({ success: true, data: r.rows[0] });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// PIPELINE (from users table)
+app.get('/api/pipeline', requireAuth, async (req, res) => {
+  try {
+    const r = await query('SELECT id,name,status,campus_id,"createdAt",current_step FROM users WHERE "isActive"=true ORDER BY "createdAt" DESC', []);
+    const rows = r.rows;
+    res.json({ success:true, data:{ intake:rows.filter(m=>m.status==='INTAKE'||m.status==='Intake'), active:rows.filter(m=>m.status==='Active'||m.status==='ACTIVE'), graduating:rows.filter(m=>m.status==='Graduating'), alumni:rows.filter(m=>m.status==='Alumni'), total:rows.length }, count:rows.length });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+app.use((err, req, res, next) => {
+  console.error("[UNHANDLED]", err);
+  res.status(500).json({ error: "Internal server error" });
+});
+
+// â”€â”€ PROGRESS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+app.get('/api/progress', requireAuth, async (req, res) => {
+  try {
+    const { memberId } = req.query;
+    const r = memberId
+      ? await query('SELECT id,name,current_step,status,campus_id FROM users WHERE id=$1 AND "isActive"=true', [memberId])
+      : await query('SELECT id,name,current_step,status,campus_id FROM users WHERE "isActive"=true ORDER BY name', []);
+    const data = r.rows.map(m => ({
+      memberId: m.id, memberName: m.name,
+      currentStep: m.current_step || 1, status: m.status, campusId: m.campus_id,
+    }));
+    res.json({ success: true, data, count: data.length });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/progress', requireAuth, async (req, res) => {
+  try {
+    const { memberId, currentStep } = req.body;
+    if (!memberId) return res.status(400).json({ error: 'memberId required' });
+    await query('UPDATE members SET current_step=$1, updated_at=NOW() WHERE id=$2', [currentStep, memberId]);
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// â”€â”€ LESSONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+app.get('/api/lessons', requireAuth, async (req, res) => {
+  try {
+    // Try lessons table first, fall back to generated structure
+    let data;
+    try {
+      const r = await query('SELECT * FROM lessons ORDER BY step_number, lesson_number', []);
+      data = r.rows;
+    } catch {
+      data = Array.from({ length: 52 }, (_, i) => ({
+        id: `lesson-${i+1}`, lesson_number: i + 1,
+        step_number: Math.ceil((i + 1) / 4),
+        title: `Lesson ${i + 1}`, status: 'available',
+      }));
+    }
+    res.json({ success: true, data, count: data.length });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// â”€â”€ STEPS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+app.get('/api/steps', requireAuth, async (req, res) => {
+  try {
+    let data;
+    try {
+      const r = await query('SELECT * FROM steps ORDER BY step_number', []);
+      data = r.rows;
+    } catch {
+      data = Array.from({ length: 12 }, (_, i) => ({
+        id: `step-${i+1}`, step_number: i + 1,
+        title: `Step ${i + 1}`, lessons: 4,
+        status: i === 0 ? 'active' : 'locked',
+      }));
+    }
+    res.json({ success: true, data, count: data.length });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// â”€â”€ REPAIRS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const _repairs = [];
+app.get('/api/repairs', requireAuth, async (req, res) => {
+  try {
+    let queue = _repairs;
+    try {
+      const r = await query('SELECT * FROM repairs ORDER BY created_at DESC LIMIT 100', []);
+      if (r.rows.length) queue = r.rows;
+    } catch {}
+    res.json({
+      success: true, queue,
+      pending:  queue.filter(r => r.status === 'queued' || r.status === 'pending').length,
+      awaiting: queue.filter(r => r.status === 'awaiting_approval').length,
+    });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/repairs', requireAuth, async (req, res) => {
+  try {
+    const { id, action, issue, risk, source } = req.body;
+    if (id && action) {
+      const status = action === 'approved' ? 'done' : 'rejected';
+      try { await query('UPDATE repairs SET status=$1, updated_at=NOW() WHERE id=$2', [status, id]); } catch {}
+      const r = _repairs.find(r => String(r.id) === String(id));
+      if (r) r.status = status;
+      return res.json({ success: true });
+    }
+    const n = { id: Date.now(), issue: issue || 'Unknown', risk: risk || 'low', source: source || 'manual', status: 'queued', created_at: new Date() };
+    try { await query('INSERT INTO repairs (id,issue,risk,source,status) VALUES ($1,$2,$3,$4,$5)', [n.id, n.issue, n.risk, n.source, n.status]); } catch {}
+    _repairs.push(n);
+    res.status(201).json({ success: true, data: n });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// â”€â”€ CALEB AI PROXY â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const CALEB_SYS = `You are CALEB, AI companion for the Refined Recovery Network. Oneness Apostolic Pentecostal. KJV only. Acts 2:38. One God â€” no Trinity. No disease model. No AA language. Warm, direct, 2-3 sentences max. End every response with a question or next step.`;
+const CALEB_FALLBACKS = [
+  "The Word is clear on this. Stay in it. What's the one thing you need to do today?",
+  "Real talk â€” this step is where it gets real. What's holding you back right now?",
+  "You're not doing this alone. Acts 2:38 is the foundation. What do you need next?",
+  "That conviction you're feeling â€” that's the Holy Ghost working. What are you going to do with it?",
+];
+
+app.post('/api/caleb', requireAuth, async (req, res) => {
+  try {
+    const { prompt, context, system } = req.body;
+    if (!prompt) return res.status(400).json({ error: 'prompt required' });
+    const SYS  = system || CALEB_SYS;
+    const full = context ? `Context: ${context}\n\nUser: ${prompt}` : prompt;
+
+    // Try Groq (free)
+    const GROQ = process.env.GROQ_API_KEY;
+    if (GROQ) {
+      try {
+        const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ}` },
+          body: JSON.stringify({ model: 'llama3-8b-8192', max_tokens: 150, messages: [{ role: 'system', content: SYS }, { role: 'user', content: full }] }),
+        });
+        const d = await r.json();
+        const text = d?.choices?.[0]?.message?.content?.trim();
+        if (text) return res.json({ success: true, response: text, provider: 'groq' });
+      } catch {}
+    }
+
+    // Fallback
+    const text = CALEB_FALLBACKS[Math.floor(Math.random() * CALEB_FALLBACKS.length)];
+    res.json({ success: true, response: text, provider: 'fallback' });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// â”€â”€ CALEB VOICE PATTERNS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+let _calebPatterns = { sandbox: [], locked: [], updatedAt: null };
+
+app.get('/api/caleb/patterns', requireAuth, async (req, res) => {
+  res.json({ success: true, ..._calebPatterns });
+});
+
+app.post('/api/caleb/patterns', requireAuth, async (req, res) => {
+  const { sandbox, locked } = req.body;
+  if (sandbox) _calebPatterns.sandbox = sandbox;
+  if (locked)  _calebPatterns.locked  = locked;
+  _calebPatterns.updatedAt = new Date();
+  res.json({ success: true, ..._calebPatterns });
+});
+
+// â”€â”€ CAMPUSES (fix 404) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+app.get('/api/campuses', async (req, res) => {
+  try {
+    // Return distinct campus_ids from users as campus list
+    const r = await query(
+      `SELECT DISTINCT campus_id AS id, campus_id AS name FROM users WHERE campus_id IS NOT NULL ORDER BY campus_id`,
+      []
+    ).catch(() => ({ rows: [] }));
+    const hardcoded = [
+      {id:'00000000-0000-0000-0000-000000000001', name:'Port Allen'},
+      {id:'00000000-0000-0000-0000-000000000002', name:'Thibodaux'},
+      {id:'00000000-0000-0000-0000-000000000003', name:'Pineville'},
+      {id:'00000000-0000-0000-0000-000000000004', name:'LaPlace'},
+    ];
+    const data = r.rows.length ? r.rows : hardcoded;
+    res.json({ success: true, data, count: data.length });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/campuses', requireAuth, async (req, res) => {
+  try {
+    const { name, city, state, address, phone, email } = req.body;
+    const r = await query(
+      'INSERT INTO campuses (name,city,state,address,phone,email) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *',
+      [name, city||'', state||'LA', address||'', phone||'', email||'']
+    );
+    res.status(201).json({ success: true, data: r.rows[0] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+
 app.use((err, req, res, next) => {
   console.error('[UNHANDLED]', err);
   res.status(500).json({ error: 'Internal server error' });
 });
 
-// ── 404 ───────────────────────────────────────────────────────
+// â”€â”€ 404 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.use((req, res) => {
   res.status(404).json({ error: `Route not found: ${req.method} ${req.path}` });
 });
 
-// ── START ─────────────────────────────────────────────────────
+// â”€â”€ START â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function start() {
   try {
     await query('SELECT 1');
@@ -935,10 +1162,16 @@ async function start() {
     process.exit(1);
   }
 
-  app.listen(PORT, () => {
+  const grantsRouter = require('./routes/grants'); const licensingRouter = require('./routes/licensing'); app.use('/api/grants', requireAuth, grantsRouter); app.use('/api/licensing', requireAuth, licensingRouter);
+
+app.listen(PORT, () => {
     console.log(`[RRN] Server running on port ${PORT}`);
     console.log(`[RRN] Environment: ${process.env.NODE_ENV || 'development'}`);
   });
 }
 
 start();
+
+
+
+
