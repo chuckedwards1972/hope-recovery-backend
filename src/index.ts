@@ -148,3 +148,5 @@ app.get('/api/sync/pull', (_req, res) => res.json({ events: [] }));
 app.use('/api/members', (req: any, res: any, next: any) => { req.url = req.url.replace('/api/members', '/api/users'); next(); });
 app.use('/api/admin/campuses', (req: any, res: any, next: any) => { req.url = req.url.replace('/api/admin/campuses', '/api/campuses'); next(); });
 app.use('/api/workforce/employers', (req: any, res: any, next: any) => { req.url = req.url.replace('/api/workforce/employers', '/api/workforce'); next(); });
+
+app.get('/api/workforce/employers', (req: any, res: any, next: any) => { req.url = '/api/workforce'; app._router.handle(req, res, next); });
