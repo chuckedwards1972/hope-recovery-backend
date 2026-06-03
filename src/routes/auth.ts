@@ -64,7 +64,7 @@ router.post('/', async (req: any, res: any, next: any) => {
 });
 
 
-// ─── Schemas ─────────────────────────────────
+// --- Schemas ---
 const LoginSchema = z.object({
   // Accept either email or username in the same field
   email: z.string().min(1),
@@ -81,7 +81,7 @@ const RegisterSchema = z.object({
   agreedToConduct: z.boolean().refine((v) => v === true, 'Must accept conduct policy'),
 });
 
-// ─── POST /api/auth/register ─────────────────
+// --- POST /api/auth/register ---
 router.post('/register', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const data = RegisterSchema.parse(req.body);
@@ -142,7 +142,7 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
   }
 });
 
-// ─── POST /api/auth/login ────────────────────
+// --- POST /api/auth/login ---
 router.post('/login', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const data = LoginSchema.parse(req.body);
@@ -201,7 +201,7 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
   }
 });
 
-// ─── POST /api/auth/refresh ──────────────────
+// --- POST /api/auth/refresh ---
 router.post('/refresh', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { refreshToken } = req.body;
@@ -247,7 +247,7 @@ router.post('/refresh', async (req: Request, res: Response, next: NextFunction) 
   }
 });
 
-// ─── POST /api/auth/logout ───────────────────
+// --- POST /api/auth/logout ---
 router.post('/logout', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { refreshToken } = req.body;
@@ -268,7 +268,7 @@ router.post('/logout', authenticate, async (req: Request, res: Response, next: N
   }
 });
 
-// ─── GET /api/auth/me ────────────────────────
+// --- GET /api/auth/me ---
 router.get('/me', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user = await prisma.user.findUnique({
@@ -290,7 +290,7 @@ router.get('/me', authenticate, async (req: Request, res: Response, next: NextFu
   }
 });
 
-// ─── POST /api/auth/forgot-password ─────────
+// --- POST /api/auth/forgot-password ---
 import crypto from 'crypto';
 import { sendEmail, passwordResetTemplate } from '../lib/email';
 
@@ -321,7 +321,7 @@ router.post('/forgot-password', async (req: Request, res: Response, next: NextFu
   } catch (err) { next(err); }
 });
 
-// ─── POST /api/auth/reset-password ───────────
+// --- POST /api/auth/reset-password ---
 router.post('/reset-password', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { token, password } = z.object({
