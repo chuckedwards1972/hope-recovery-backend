@@ -150,3 +150,5 @@ app.use('/api/admin/campuses', (req: any, res: any, next: any) => { req.url = re
 app.use('/api/workforce/employers', (req: any, res: any, next: any) => { req.url = req.url.replace('/api/workforce/employers', '/api/workforce'); next(); });
 
 app.get('/api/workforce/employers', (req: any, res: any, next: any) => { req.url = '/api/workforce'; app._router.handle(req, res, next); });
+
+app.get('/api/workforce/employers', (req: any, res: any, next: any) => { req.url = '/api/workforce'; app._router.handle(req, res, next); });
