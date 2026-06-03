@@ -152,3 +152,5 @@ app.use('/api/workforce/employers', (req: any, res: any, next: any) => { req.url
 app.get('/api/workforce/employers', (req: any, res: any, next: any) => { req.url = '/api/workforce'; app._router.handle(req, res, next); });
 
 app.get('/api/workforce/employers', (req: any, res: any, next: any) => { req.url = '/api/workforce'; app._router.handle(req, res, next); });
+
+app.get('/api/workforce/employers', (req: any, res: any, next: any) => { req.url = '/api/workforce'; app._router.handle(req, res, next); });
