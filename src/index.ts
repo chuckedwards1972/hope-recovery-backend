@@ -34,6 +34,7 @@ import taskRoutes from './routes/tasks';
 import grantRoutes from './routes/grants';
 import pipelineRoutes from './routes/pipeline';
 import missionRoutes from './routes/missions';
+import repairsRoutes from './routes/repairs';
 
 initSentry();
 
@@ -87,6 +88,7 @@ app.use('/api/tasks', taskRoutes);
 app.use('/api/grants', grantRoutes);
 app.use('/api/pipeline', pipelineRoutes);
 app.use('/api/missions', missionRoutes);
+app.use('/api/repairs', repairsRoutes);
 app.get('/api/dashboard', (_req, res) => res.json({ members: { active: 0, total: 0 }, housing: { total_capacity: 0, occupied: 0 }, financial: { month_donations: 0 } }));
 
 app.use(Sentry.Handlers.errorHandler());
@@ -131,4 +133,5 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason) => {
   logger.error({ reason }, 'Unhandled rejection');
 });
+
 
