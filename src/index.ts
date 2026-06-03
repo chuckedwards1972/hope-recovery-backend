@@ -138,3 +138,9 @@ process.on('unhandledRejection', (reason) => {
 
 app.get('/api/health', (_req, res) => res.json({ ok: true, ts: new Date().toISOString() }));
 app.get('/health', (_req, res) => res.json({ ok: true }));
+
+app.get('/api/members', (req: any, res, next) => { req.url='/api/users'; app._router.handle(req,res,next); });
+app.get('/api/admin/campuses', (req: any, res, next) => { req.url='/api/campuses'; app._router.handle(req,res,next); });
+app.get('/api/lms/progress', (_req, res) => res.json({ progress: {} }));
+app.get('/api/testimonies/featured', (_req, res) => res.json([]));
+app.get('/api/sync/pull', (_req, res) => res.json({ events: [] }));
