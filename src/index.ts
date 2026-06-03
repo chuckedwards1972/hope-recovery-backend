@@ -135,3 +135,6 @@ process.on('unhandledRejection', (reason) => {
 });
 
 
+
+app.get('/api/health', (_req, res) => res.json({ ok: true, ts: new Date().toISOString() }));
+app.get('/health', (_req, res) => res.json({ ok: true }));
